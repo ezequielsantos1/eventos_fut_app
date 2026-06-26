@@ -1,3 +1,4 @@
+import '../theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../models/evento.dart';
 import '../models/modalidade.dart';
@@ -8,7 +9,7 @@ class CardEvento extends StatelessWidget {
   final String userId;
   final VoidCallback onConfirmar;
 
-  const CardEvento({
+  CardEvento({
     super.key,
     required this.evento,
     required this.userId,
@@ -44,26 +45,26 @@ class CardEvento extends StatelessWidget {
             opacity: anim,
             child: child,
           ),
-          transitionDuration: const Duration(milliseconds: 220),
+          transitionDuration: Duration(milliseconds: 220),
         ),
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF0F1E35),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: confirmado
                 ? cor.withOpacity(0.4)
-                : Colors.white.withOpacity(0.06),
+                : AppColors.text.withOpacity(0.08),
             width: confirmado ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color: confirmado
                   ? cor.withOpacity(0.08)
-                  : Colors.black.withOpacity(0.15),
+                  : Colors.black.withOpacity(0.06),
               blurRadius: 16,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -77,23 +78,23 @@ class CardEvento extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [cor.withOpacity(0.8), cor.withOpacity(0.0)],
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(18),
                   topRight: Radius.circular(18),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(cor),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Text(
                     evento.titulo,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.text,
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.2,
@@ -101,11 +102,11 @@ class CardEvento extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _buildInfoGrid(),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
                   _buildProgressBar(cor, pct),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _buildBotao(confirmado, cor),
                 ],
               ),
@@ -120,7 +121,7 @@ class CardEvento extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
           decoration: BoxDecoration(
             color: cor.withOpacity(0.14),
             borderRadius: BorderRadius.circular(8),
@@ -130,8 +131,8 @@ class CardEvento extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(evento.modalidade.emoji,
-                  style: const TextStyle(fontSize: 12)),
-              const SizedBox(width: 5),
+                  style: TextStyle(fontSize: 12)),
+              SizedBox(width: 5),
               Text(
                 evento.modalidade.label,
                 style: TextStyle(
@@ -144,16 +145,16 @@ class CardEvento extends StatelessWidget {
             ],
           ),
         ),
-        const Spacer(),
+        Spacer(),
         if (evento.cheio)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.red.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
             ),
-            child: const Text(
+            child: Text(
               'LOTADO',
               style: TextStyle(
                 color: Colors.redAccent,
@@ -174,12 +175,12 @@ class CardEvento extends StatelessWidget {
           icon: Icons.calendar_today_rounded,
           text: _formatarData(evento.dataHora),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5),
         _InfoRow(
           icon: Icons.location_on_rounded,
           text: evento.local,
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5),
         _InfoRow(
           icon: Icons.person_outline_rounded,
           text: evento.organizador,
@@ -189,22 +190,22 @@ class CardEvento extends StatelessWidget {
   }
 
   Widget _buildProgressBar(Color cor, double pct) {
-    final vagasCor = evento.cheio ? Colors.redAccent : const Color(0xFF2979FF);
+    final vagasCor = evento.cheio ? Colors.redAccent : Color(0xFF2979FF);
     return Column(
       children: [
         Row(
           children: [
             Icon(Icons.group_outlined,
-                size: 13, color: Colors.white.withOpacity(0.4)),
-            const SizedBox(width: 5),
+                size: 13, color: AppColors.text.withOpacity(0.4)),
+            SizedBox(width: 5),
             Text(
               '${evento.confirmados.length}/${evento.maxJogadores} jogadores',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.45),
+                color: AppColors.text.withOpacity(0.55),
                 fontSize: 12,
               ),
             ),
-            const Spacer(),
+            Spacer(),
             Text(
               evento.cheio ? 'Sem vagas' : '${evento.vagasRestantes} vagas',
               style: TextStyle(
@@ -215,12 +216,12 @@ class CardEvento extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 7),
+        SizedBox(height: 7),
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
             value: pct,
-            backgroundColor: Colors.white.withOpacity(0.08),
+            backgroundColor: AppColors.text.withOpacity(0.07),
             valueColor: AlwaysStoppedAnimation<Color>(
               evento.cheio ? Colors.redAccent : cor,
             ),
@@ -236,18 +237,18 @@ class CardEvento extends StatelessWidget {
 
     Color bgColor;
     if (confirmado) {
-      bgColor = const Color(0xFF2979FF).withOpacity(0.15);
+      bgColor = Color(0xFF2979FF).withOpacity(0.15);
     } else if (bloqueado) {
-      bgColor = Colors.white.withOpacity(0.05);
+      bgColor = AppColors.text.withOpacity(0.05);
     } else {
       bgColor = cor.withOpacity(0.18);
     }
 
     Color fgColor;
     if (confirmado) {
-      fgColor = const Color(0xFF2979FF);
+      fgColor = Color(0xFF2979FF);
     } else if (bloqueado) {
-      fgColor = Colors.white.withOpacity(0.3);
+      fgColor = AppColors.text.withOpacity(0.45);
     } else {
       fgColor = cor;
     }
@@ -260,9 +261,9 @@ class CardEvento extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: confirmado
-              ? const Color(0xFF2979FF).withOpacity(0.3)
+              ? Color(0xFF2979FF).withOpacity(0.3)
               : bloqueado
-                  ? Colors.white.withOpacity(0.07)
+                  ? AppColors.text.withOpacity(0.08)
                   : cor.withOpacity(0.3),
           width: 1,
         ),
@@ -285,7 +286,7 @@ class CardEvento extends StatelessWidget {
                   size: 16,
                   color: fgColor,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   confirmado
                       ? 'Presença Confirmada'
@@ -312,19 +313,19 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _InfoRow({required this.icon, required this.text});
+  _InfoRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 12, color: Colors.white.withOpacity(0.3)),
-        const SizedBox(width: 7),
+        Icon(icon, size: 12, color: AppColors.text.withOpacity(0.45)),
+        SizedBox(width: 7),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: AppColors.text.withOpacity(0.6),
               fontSize: 12,
               height: 1.3,
             ),
