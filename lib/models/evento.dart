@@ -9,6 +9,10 @@ class Evento {
   final String organizador;
   final int maxJogadores;
   final Set<String> confirmados;
+  final String cep;
+  final String bairro;
+  final String cidade;
+  final String estado;
 
   Evento({
     required this.id,
@@ -19,7 +23,25 @@ class Evento {
     required this.organizador,
     required this.maxJogadores,
     Set<String>? confirmados,
+    this.cep = '',
+    this.bairro = '',
+    this.cidade = '',
+    this.estado = '',
   }) : confirmados = confirmados ?? {};
+
+  /// Endereço completo formatado (bairro, cidade - estado, CEP),
+  /// ignorando partes vazias.
+  String get enderecoCompleto {
+    final partes = <String>[];
+    if (bairro.isNotEmpty) partes.add(bairro);
+    if (cidade.isNotEmpty && estado.isNotEmpty) {
+      partes.add('$cidade - $estado');
+    } else if (cidade.isNotEmpty) {
+      partes.add(cidade);
+    }
+    if (cep.isNotEmpty) partes.add('CEP $cep');
+    return partes.join(', ');
+  }
 
   bool get cheio => confirmados.length >= maxJogadores;
 
