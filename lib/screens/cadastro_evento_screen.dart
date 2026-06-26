@@ -1,9 +1,12 @@
+import '../theme/app_colors.dart';
+import '../theme/theme_controller.dart';
 import 'package:flutter/material.dart';
 import '../models/evento.dart';
 import '../models/modalidade.dart';
+import '../services/cep_service.dart';
 
 class CadastroEventoScreen extends StatefulWidget {
-  const CadastroEventoScreen({super.key});
+  CadastroEventoScreen({super.key});
 
   @override
   State<CadastroEventoScreen> createState() => _CadastroEventoScreenState();
@@ -17,13 +20,22 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
   final _organizadorCtrl = TextEditingController();
   final _maxJogCtrl = TextEditingController();
 
-  Modalidade _modalidade = Modalidade.futebol;
-  DateTime _data = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _hora = const TimeOfDay(hour: 15, minute: 0);
+  // Endereço / CEP
+  final _cepCtrl = TextEditingController();
+  final _bairroCtrl = TextEditingController();
+  final _cidadeCtrl = TextEditingController();
+  final _estadoCtrl = TextEditingController();
 
-  static const _bg = Color(0xFF0B1120);
-  static const _surface = Color(0xFF0F1E35);
-  static const _green = Color(0xFF2979FF);
+  bool _buscandoCep = false;
+  String? _erroCep;
+
+  Modalidade _modalidade = Modalidade.futebol;
+  DateTime _data = DateTime.now().add(Duration(days: 1));
+  TimeOfDay _hora = TimeOfDay(hour: 15, minute: 0);
+
+  static Color get _bg => AppColors.bg;
+  static Color get _surface => AppColors.surface;
+  static const Color _green = Color(0xFF2979FF);
 
   @override
   void initState() {
@@ -37,6 +49,10 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
     _localCtrl.dispose();
     _organizadorCtrl.dispose();
     _maxJogCtrl.dispose();
+    _cepCtrl.dispose();
+    _bairroCtrl.dispose();
+    _cidadeCtrl.dispose();
+    _estadoCtrl.dispose();
     super.dispose();
   }
 
@@ -46,76 +62,125 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _bg,
-        title: const Text(
+        title: Text(
           'Novo Evento',
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 18,
-            color: Colors.white,
+            color: AppColors.text,
             letterSpacing: -0.3,
           ),
         ),
         leading: IconButton(
           icon: Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.07),
+              color: AppColors.text.withOpacity(0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.close_rounded,
-                size: 18, color: Colors.white),
+            child: Icon(Icons.close_rounded,
+                size: 18, color: AppColors.text),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
+          preferredSize: Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: Colors.white.withOpacity(0.06),
+            color: AppColors.text.withOpacity(0.08),
           ),
         ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+          physics: BouncingScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
           children: [
             _buildModalidadeSection(),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             _buildLabel('Título do Evento'),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildCampoTexto(
               controller: _tituloCtrl,
               hint: 'Ex: Pelada das Quintas',
               icone: Icons.title_rounded,
               validator: (v) => v == null || v.isEmpty ? 'Informe um título' : null,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildLabel('Local'),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildCampoTexto(
               controller: _localCtrl,
               hint: 'Ex: Campo do Bairro, Caxias - MA',
               icone: Icons.location_on_rounded,
               validator: (v) => v == null || v.isEmpty ? 'Informe o local' : null,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
+            _buildLabel('CEP'),
+            SizedBox(height: 8),
+            _buildCampoCep(),
+            SizedBox(height: 20),
+            _buildLabel('Bairro'),
+            SizedBox(height: 8),
+            _buildCampoTexto(
+              controller: _bairroCtrl,
+              hint: 'Ex: Centro',
+              icone: Icons.holiday_village_rounded,
+            ),
+            SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('Cidade'),
+                      SizedBox(height: 8),
+                      _buildCampoTexto(
+                        controller: _cidadeCtrl,
+                        hint: 'Ex: Caxias',
+                        icone: Icons.location_city_rounded,
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel('UF'),
+                      SizedBox(height: 8),
+                      _buildCampoTexto(
+                        controller: _estadoCtrl,
+                        hint: 'MA',
+                        icone: Icons.map_rounded,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
             _buildLabel('Data e Hora'),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildSeletorDataHora(),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildLabel('Organizador'),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildCampoTexto(
               controller: _organizadorCtrl,
               hint: 'Seu nome',
               icone: Icons.person_rounded,
               validator: (v) => v == null || v.isEmpty ? 'Informe o organizador' : null,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildLabel('Máximo de Jogadores'),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _buildCampoTexto(
               controller: _maxJogCtrl,
               hint: _modalidade.maxJogadoresPadrao.toString(),
@@ -128,7 +193,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             _buildBotaoCriar(),
           ],
         ),
@@ -143,7 +208,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel('Modalidade'),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         Row(
           children: Modalidade.values.map((m) {
             final sel = _modalidade == m;
@@ -158,14 +223,14 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
                     _maxJogCtrl.text = m.maxJogadoresPadrao.toString();
                   }),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
                       color: sel ? m.cor.withOpacity(0.18) : _surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: sel ? m.cor : Colors.white.withOpacity(0.08),
+                        color: sel ? m.cor : AppColors.text.withOpacity(0.07),
                         width: sel ? 1.5 : 1,
                       ),
                       boxShadow: sel
@@ -173,7 +238,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
                               BoxShadow(
                                 color: m.cor.withOpacity(0.2),
                                 blurRadius: 12,
-                                offset: const Offset(0, 4),
+                                offset: Offset(0, 4),
                               ),
                             ]
                           : [],
@@ -181,14 +246,14 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
                     child: Column(
                       children: [
                         Text(m.emoji,
-                            style: const TextStyle(fontSize: 26)),
-                        const SizedBox(height: 6),
+                            style: TextStyle(fontSize: 26)),
+                        SizedBox(height: 6),
                         Text(
                           m.label,
                           style: TextStyle(
                             color: sel
                                 ? m.cor
-                                : Colors.white.withOpacity(0.45),
+                                : AppColors.text.withOpacity(0.55),
                             fontSize: 11,
                             fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
                             letterSpacing: 0.2,
@@ -218,7 +283,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
             onTap: _selecionarData,
           ),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         Expanded(
           child: _BotaoSeletor(
             icone: Icons.access_time_rounded,
@@ -228,6 +293,105 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildCampoCep() {
+    return TextFormField(
+      controller: _cepCtrl,
+      keyboardType: TextInputType.number,
+      style: TextStyle(color: AppColors.text, fontSize: 14),
+      cursorColor: _green,
+      onChanged: (valor) {
+        final mascarado = CepService.aplicarMascara(valor);
+        if (mascarado != valor) {
+          _cepCtrl.value = TextEditingValue(
+            text: mascarado,
+            selection: TextSelection.collapsed(offset: mascarado.length),
+          );
+        }
+        if (_erroCep != null) setState(() => _erroCep = null);
+        final digitos = mascarado.replaceAll(RegExp(r'[^0-9]'), '');
+        if (digitos.length == 8) {
+          _buscarCep(mascarado);
+        }
+      },
+      validator: (v) {
+        if (v == null || v.isEmpty) return 'Informe o CEP';
+        final digitos = v.replaceAll(RegExp(r'[^0-9]'), '');
+        if (digitos.length != 8) return 'CEP inválido';
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: 'Ex: 65600-000',
+        hintStyle:
+            TextStyle(color: AppColors.text.withOpacity(0.35), fontSize: 14),
+        prefixIcon: Icon(Icons.markunread_mailbox_rounded,
+            color: _green.withOpacity(0.7), size: 18),
+        suffixIcon: _buscandoCep
+            ? Padding(
+                padding: EdgeInsets.all(14),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _green,
+                  ),
+                ),
+              )
+            : null,
+        filled: true,
+        fillColor: _surface,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.text.withOpacity(0.07)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.text.withOpacity(0.07)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: _green, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.redAccent),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
+        errorText: _erroCep,
+        errorStyle: TextStyle(color: Colors.redAccent, fontSize: 11),
+      ),
+    );
+  }
+
+  Future<void> _buscarCep(String cep) async {
+    setState(() {
+      _buscandoCep = true;
+      _erroCep = null;
+    });
+    try {
+      final endereco = await CepService.buscar(cep);
+      if (!mounted) return;
+      setState(() {
+        _bairroCtrl.text = endereco.bairro;
+        _cidadeCtrl.text = endereco.cidade;
+        _estadoCtrl.text = endereco.estado;
+        // Se o campo Local ainda estiver vazio, sugere o logradouro.
+        if (_localCtrl.text.isEmpty && endereco.logradouro.isNotEmpty) {
+          _localCtrl.text = endereco.logradouro;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _erroCep = e.toString());
+    } finally {
+      if (mounted) setState(() => _buscandoCep = false);
+    }
   }
 
   // ─── BOTÃO CRIAR ───────────────────────────────────────────────────────────
@@ -248,7 +412,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
           BoxShadow(
             color: cor.withOpacity(0.35),
             blurRadius: 16,
-            offset: const Offset(0, 6),
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -257,7 +421,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: _criarEvento,
-          child: const Center(
+          child: Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -286,7 +450,7 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
     return Text(
       texto.toUpperCase(),
       style: TextStyle(
-        color: Colors.white.withOpacity(0.35),
+        color: AppColors.text.withOpacity(0.45),
         fontSize: 10,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.8,
@@ -305,38 +469,38 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: AppColors.text, fontSize: 14),
       cursorColor: _green,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle:
-            TextStyle(color: Colors.white.withOpacity(0.22), fontSize: 14),
+            TextStyle(color: AppColors.text.withOpacity(0.35), fontSize: 14),
         prefixIcon: Icon(icone, color: _green.withOpacity(0.7), size: 18),
         filled: true,
         fillColor: _surface,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: BorderSide(color: AppColors.text.withOpacity(0.07)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: BorderSide(color: AppColors.text.withOpacity(0.07)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _green, width: 1.5),
+          borderSide: BorderSide(color: _green, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent),
+          borderSide: BorderSide(color: Colors.redAccent),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: BorderSide(color: Colors.redAccent, width: 1.5),
         ),
-        errorStyle: const TextStyle(color: Colors.redAccent, fontSize: 11),
+        errorStyle: TextStyle(color: Colors.redAccent, fontSize: 11),
       ),
     );
   }
@@ -357,14 +521,20 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
       context: context,
       initialDate: _data,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: _green,
-            surface: Color(0xFF0F1E35),
-            onSurface: Colors.white,
-          ),
+          colorScheme: isDarkMode
+              ? ColorScheme.dark(
+                  primary: _green,
+                  surface: AppColors.surface,
+                  onSurface: AppColors.text,
+                )
+              : ColorScheme.light(
+                  primary: _green,
+                  surface: AppColors.surface,
+                  onSurface: AppColors.text,
+                ),
         ),
         child: child!,
       ),
@@ -378,11 +548,17 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
       initialTime: _hora,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: _green,
-            surface: Color(0xFF0F1E35),
-            onSurface: Colors.white,
-          ),
+          colorScheme: isDarkMode
+              ? ColorScheme.dark(
+                  primary: _green,
+                  surface: AppColors.surface,
+                  onSurface: AppColors.text,
+                )
+              : ColorScheme.light(
+                  primary: _green,
+                  surface: AppColors.surface,
+                  onSurface: AppColors.text,
+                ),
         ),
         child: child!,
       ),
@@ -409,6 +585,10 @@ class _CadastroEventoScreenState extends State<CadastroEventoScreen> {
       modalidade: _modalidade,
       organizador: _organizadorCtrl.text.trim(),
       maxJogadores: int.parse(_maxJogCtrl.text.trim()),
+      cep: _cepCtrl.text.trim(),
+      bairro: _bairroCtrl.text.trim(),
+      cidade: _cidadeCtrl.text.trim(),
+      estado: _estadoCtrl.text.trim(),
     );
 
     Navigator.pop(context, novo);
@@ -422,7 +602,7 @@ class _BotaoSeletor extends StatelessWidget {
   final String texto;
   final VoidCallback onTap;
 
-  const _BotaoSeletor({
+  _BotaoSeletor({
     required this.icone,
     required this.texto,
     required this.onTap,
@@ -433,22 +613,22 @@ class _BotaoSeletor extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F1E35),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: AppColors.text.withOpacity(0.07)),
         ),
         child: Row(
           children: [
             Icon(icone,
-                color: const Color(0xFF2979FF).withOpacity(0.7), size: 16),
-            const SizedBox(width: 8),
+                color: Color(0xFF2979FF).withOpacity(0.7), size: 16),
+            SizedBox(width: 8),
             Expanded(
               child: Text(
                 texto,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.text,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -456,7 +636,7 @@ class _BotaoSeletor extends StatelessWidget {
               ),
             ),
             Icon(Icons.expand_more_rounded,
-                color: Colors.white.withOpacity(0.25), size: 18),
+                color: AppColors.text.withOpacity(0.4), size: 18),
           ],
         ),
       ),
